@@ -5,6 +5,7 @@ using TaskBarHook.Desktop;
 using TaskBarHook.Logging;
 using TaskBarHook.Media;
 using TaskBarHook.Presentation;
+using TaskBarHook.Queue;
 using TaskBarHook.Tray;
 using TaskBarHook.Views;
 
@@ -20,6 +21,7 @@ public partial class App : System.Windows.Application
     private RegisteredWaitHandle? _showWait;
     private FileLogger? _logger;
     private IMediaSessionService? _media;
+    private IPlaybackQueueService? _queue;
     private CapsuleViewModel? _viewModel;
     private CapsuleHost? _host;
     private TrayIconService? _tray;
@@ -84,10 +86,25 @@ public partial class App : System.Windows.Application
         }
 
         var clock = new SystemClock();
-        _media = simulate
-            ? new SimulatedMediaSessionService(clock, _logger)
-            : new SystemMediaSessionService(_logger);
-        _viewModel = new CapsuleViewModel(_media, clock, _logger);
+        if (simulate)
+        {
+            var simulated = new SimulatedMediaSessionService(clock, _logger);
+            _media = simulated;
+            _queue = simulated;
+        }
+        else
+        {
+            _media = new SystemMediaSessionService(_logger);
+            _queue = new SpotifyPlaybackQueueService(
+                SpotifyOptions.FromEnvironment(),
+                new ProtectedSecretStore(),
+                new SpotifyHttpClient(),
+                new LoopbackSpotifyAuth(),
+                clock,
+                _logger);
+        }
+
+        _viewModel = new CapsuleViewModel(_media, clock, _logger, _queue);
         var environment = new Win32DesktopEnvironment();
         var occupancySource = new TaskbarOccupancySource(environment, _logger);
         _host = new CapsuleHost(_viewModel, environment, occupancySource, _logger);
@@ -140,6 +157,11 @@ public partial class App : System.Windows.Application
         _tray?.Dispose();
         _viewModel?.Dispose();
         _host?.Dispose();
+        if (_queue is not null && !ReferenceEquals(_queue, _media))
+        {
+            await _queue.DisposeAsync();
+        }
+
         if (_media is not null)
         {
             await _media.DisposeAsync();

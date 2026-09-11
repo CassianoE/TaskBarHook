@@ -23,6 +23,7 @@ public sealed class CapsuleHost : IDisposable
     private readonly IAppLogger _logger;
     private readonly CompactWindow _compact;
     private readonly PanelWindow _panel;
+    private readonly QueueFlyoutWindow _queue;
     private readonly DesktopShellMonitor _shell;
     private readonly OccupancyRefreshCoordinator _occupancyRefresh;
 
@@ -31,6 +32,7 @@ public sealed class CapsuleHost : IDisposable
     private ThemeManager? _themes;
     private HwndSource? _compactThemeHook;
     private HwndSource? _panelThemeHook;
+    private HwndSource? _queueThemeHook;
     private bool _shellConflict;
     private bool _disposed;
     private string? _lastOccupancyKey;
@@ -53,6 +55,7 @@ public sealed class CapsuleHost : IDisposable
         {
             ShouldStayOpen = ShouldKeepPanelOpen
         };
+        _queue = new QueueFlyoutWindow(viewModel);
         _shell = new DesktopShellMonitor(environment, logger);
     }
 
@@ -70,6 +73,7 @@ public sealed class CapsuleHost : IDisposable
     {
         _compact.Attach();
         _panel.Attach();
+        _queue.Attach();
         HookMouseActivate(_compact);
 
         if (System.Windows.Application.Current is { } app)
@@ -81,10 +85,12 @@ public sealed class CapsuleHost : IDisposable
 
         HookTheme(_compact, source => _compactThemeHook = source);
         HookTheme(_panel, source => _panelThemeHook = source);
+        HookTheme(_queue, source => _queueThemeHook = source);
 
         _viewModel.VisibilityChanged += (_, _) => ApplyWindowVisibility();
         _viewModel.ActivateRequested += (_, _) => OpenPanel();
         _viewModel.RestoreForegroundRequested += (_, _) => RestoreForeground();
+        _viewModel.Queue.OpenedChanged += (_, _) => ApplyQueueFlyout();
         _viewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CapsuleViewModel.IsExpanded))
@@ -249,9 +255,12 @@ public sealed class CapsuleHost : IDisposable
         _compactThemeHook = null;
         _panelThemeHook?.RemoveHook(OnThemeMessage);
         _panelThemeHook = null;
+        _queueThemeHook?.RemoveHook(OnThemeMessage);
+        _queueThemeHook = null;
         _occupancyRefresh.OccupancyReady -= OnOccupancyReady;
         _occupancyRefresh.Dispose();
         _shell.Dispose();
+        _queue.Close();
         _panel.Close();
         _compact.Close();
     }
@@ -295,9 +304,12 @@ public sealed class CapsuleHost : IDisposable
             {
                 OpenPanel();
             }
+
+            ApplyQueueFlyout();
         }
         else if (_panel.IsVisible)
         {
+            _queue.HideImmediate();
             if (_viewModel.HideReason == HideReason.Fullscreen)
             {
                 _panel.HideImmediate();
@@ -306,6 +318,10 @@ public sealed class CapsuleHost : IDisposable
             {
                 _panel.HidePanel();
             }
+        }
+        else
+        {
+            _queue.HideImmediate();
         }
     }
 
@@ -350,11 +366,52 @@ public sealed class CapsuleHost : IDisposable
         _panel.Top = Math.Max(monitor.Y / scale, top);
         _panel.Width = width;
         _panel.Height = height;
+        ApplyQueueFlyout();
+    }
+
+    private void ApplyQueueFlyout()
+    {
+        if (_viewModel.Queue.IsOpen && _viewModel.ShowPanel)
+        {
+            PlaceQueueFlyout();
+            _queue.ShowFlyout(_viewModel.Queue.WantsFocus);
+            return;
+        }
+
+        if (_queue.IsVisible)
+        {
+            if (!_viewModel.ShowPanel)
+            {
+                _queue.HideImmediate();
+            }
+            else
+            {
+                _queue.HideFlyout();
+            }
+        }
+    }
+
+    private void PlaceQueueFlyout()
+    {
+        var scale = Math.Max(0.5, LastOccupancy.Scale);
+        var monitor = _environment.GetPrimaryMonitor();
+        var work = new Rect(
+            monitor.WorkX / scale,
+            monitor.WorkY / scale,
+            monitor.WorkWidth / scale,
+            monitor.WorkHeight / scale);
+        var panel = new Rect(_panel.Left, _panel.Top, PanelWindow.PanelWidth, PanelWindow.PanelHeight);
+        var height = QueueFlyoutPlacement.HeightFor(_viewModel.Queue.Items.Count, _viewModel.Queue.ShowList);
+        var placement = QueueFlyoutPlacement.Choose(
+            panel,
+            work,
+            new System.Windows.Size(QueueFlyoutPlacement.WidthDip, height));
+        _queue.Place(placement);
     }
 
     private IReadOnlyList<nint> OurHandles()
     {
-        return [_compact.Handle, _panel.Handle];
+        return [_compact.Handle, _panel.Handle, _queue.Handle];
     }
 
     private void DismissPanelIfNeeded()
@@ -413,13 +470,13 @@ public sealed class CapsuleHost : IDisposable
             root = hwnd;
         }
 
-        return root == _compact.Handle || root == _panel.Handle;
+        return root == _compact.Handle || root == _panel.Handle || root == _queue.Handle;
     }
 
     private void RememberForeground()
     {
         var current = NativeMethods.GetForegroundWindow();
-        if (current != nint.Zero && current != _compact.Handle && current != _panel.Handle)
+        if (current != nint.Zero && current != _compact.Handle && current != _panel.Handle && current != _queue.Handle)
         {
             _previousForeground = current;
         }

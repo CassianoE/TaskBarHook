@@ -8,6 +8,7 @@ using TaskBarHook.Desktop;
 using TaskBarHook.Logging;
 using TaskBarHook.Media;
 using TaskBarHook.Models;
+using TaskBarHook.Queue;
 
 namespace TaskBarHook.Presentation;
 
@@ -39,10 +40,20 @@ public partial class CapsuleViewModel : ObservableObject, IDisposable
     private bool _seekSending;
 
     public CapsuleViewModel(IMediaSessionService media, IClock clock, IAppLogger logger)
+        : this(media, clock, logger, new NullPlaybackQueueService())
+    {
+    }
+
+    public CapsuleViewModel(
+        IMediaSessionService media,
+        IClock clock,
+        IAppLogger logger,
+        IPlaybackQueueService playbackQueue)
     {
         _media = media;
         _clock = clock;
         _logger = logger;
+        Queue = new QueuePresenter(playbackQueue, clock, logger);
         _media.SnapshotChanged += OnSnapshotChanged;
 
         _progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -51,6 +62,8 @@ public partial class CapsuleViewModel : ObservableObject, IDisposable
         _graceTimer = new DispatcherTimer { Interval = NoMediaGrace };
         _graceTimer.Tick += (_, _) => OnGraceElapsed();
     }
+
+    public QueuePresenter Queue { get; }
 
     public event EventHandler? ActivateRequested;
 
@@ -142,6 +155,7 @@ public partial class CapsuleViewModel : ObservableObject, IDisposable
 
         if (fullscreen)
         {
+            Queue.CloseImmediate();
             IsExpanded = false;
         }
 
@@ -189,6 +203,7 @@ public partial class CapsuleViewModel : ObservableObject, IDisposable
         }
 
         CancelSeek();
+        Queue.CloseImmediate();
         IsExpanded = false;
         UserRequestedEmptyPanel = false;
         RecalculateVisibility();
@@ -369,6 +384,7 @@ public partial class CapsuleViewModel : ObservableObject, IDisposable
 
         _disposed = true;
         _media.SnapshotChanged -= OnSnapshotChanged;
+        Queue.Dispose();
         _progressTimer.Stop();
         _graceTimer.Stop();
         _commandGate.Dispose();
@@ -456,6 +472,7 @@ public partial class CapsuleViewModel : ObservableObject, IDisposable
         UpdateArtwork(snapshot.Track);
         _snapshot = snapshot;
         _timeline = snapshot.Timeline;
+        Queue.SetSession(snapshot);
         UpdateProgress();
     }
 
@@ -623,9 +640,13 @@ public partial class CapsuleViewModel : ObservableObject, IDisposable
         IsCapsuleVisible = decision.ShowCompact || decision.ShowPanel;
         HideReason = decision.Reason;
         IsEmptyState = !HasLiveSession && decision.ShowPanel && UserRequestedEmptyPanel;
-        if (!ShowPanel && _seek.IsPreviewing)
+        if (!ShowPanel)
         {
-            _seek.Cancel();
+            Queue.CloseImmediate();
+            if (_seek.IsPreviewing)
+            {
+                _seek.Cancel();
+            }
         }
 
         SyncProgressTimer();
@@ -677,6 +698,7 @@ public partial class CapsuleViewModel : ObservableObject, IDisposable
     {
         if (!value)
         {
+            Queue.CloseImmediate();
             RecalculateVisibility();
         }
     }

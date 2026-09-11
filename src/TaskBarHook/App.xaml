@@ -20,7 +20,7 @@
             <SolidColorBrush x:Key="TaskBarHook.HoverFill" Color="#28FFFFFF" />
             <SolidColorBrush x:Key="TaskBarHook.PressedFill" Color="#380078D4" />
             <SolidColorBrush x:Key="TaskBarHook.HoverText" Color="#F3F3F3" />
-            <SolidColorBrush x:Key="TaskBarHook.FocusRing" Color="#800078D4" />
+            <SolidColorBrush x:Key="TaskBarHook.FocusRing" Color="#FF0A95FF" />
             <SolidColorBrush x:Key="TaskBarHook.ProgressTrack" Color="#3A3A3C" />
             <SolidColorBrush x:Key="TaskBarHook.ProgressFill" Color="#F3F3F3" />
             <SolidColorBrush x:Key="TaskBarHook.ProgressRemainder" Color="#33FFFFFF" />

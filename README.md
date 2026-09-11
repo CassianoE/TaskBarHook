@@ -10,9 +10,9 @@ Sem Top Mode, volume, playlists, login ou seletor manual de player — só o ess
 ## Recursos
 
 - **Compacto dentro da faixa da taskbar** (~200×32 DIP), com capa, título e play/pause; encolhe para o modo mínimo (~72×32) ou some para a bandeja quando não há espaço.
-- **Painel de reprodução** com capa, artista, anterior/play/próxima e barra de posição interativa (clique ou arraste; Esc cancela a prévia).
+- **Painel de reprodução** com capa, artista, anterior/play/próxima, barra de posição e um atalho **Próximas** que abre a fila num painel flutuante (consulta, sem reordenar).
 - **Teclado**: setas ±5 s, Home/End, Tab com foco visível; Espaço fora da barra alterna play/pause.
-- **Temas**: acompanha o modo claro/escuro do sistema ao vivo, usa a cor de destaque com moderação e respeita alto contraste e animações reduzidas.
+- **Temas**: acompanha o modo claro/escuro do sistema ao vivo, usa a cor de destaque com um anel de foco ≥ 3:1 e respeita alto contraste e animações reduzidas.
 - **Boa convivência**: some em tela cheia exclusiva, diante do Iniciar, pesquisa e prévias — e volta sozinho quando liberado.
 - **Sem privilégios de administrador**, sem injeção no Explorer, sem `SetParent`, sem mover controles da barra.
 
@@ -39,17 +39,20 @@ dotnet publish src/TaskBarHook/TaskBarHook.csproj -c Release -r win-x64 --self-c
 .\artifacts\win-x64\TaskBarHook.exe
 ```
 
+Para a fila do Spotify (opcional): crie um app em [developer.spotify.com](https://developer.spotify.com/dashboard), defina o redirect `http://127.0.0.1:47823/callback` e a variável de ambiente `TASKBARHOOK_SPOTIFY_CLIENT_ID`. Escopos: `user-read-currently-playing` e `user-read-playback-state`. O executável não contém client secret; os tokens ficam protegidos em `%LOCALAPPDATA%\TaskBarHook\secrets`. Sem essa credencial a fila informa o que falta em vez de inventar faixas.
+
 ## Uso
 
 - **Compacto**: capa, título truncado, play/pause. Clique na superfície abre ou fecha o painel.
 - **Painel**: clique na barra escolhe um ponto; arrastar o indicador escolhe com precisão e soltar envia um único pedido. Durante o arraste o tempo acompanha o ponteiro.
+- **Próximas**: no painel expandido, passa o ponteiro (ou clique/teclado) para ver a fila ao lado, sem trocar de ecrã. Esc fecha a lista primeiro.
 - **Sem suporte a seek** na sessão, a barra fica só informativa, sem indicador de comando.
-- **Esc** cancela a prévia (ou fecha o painel fora do arraste); clique fora e Alt+Tab também fecham.
+- **Esc** cancela a prévia; se a fila estiver aberta, fecha só a lista; senão fecha o painel. Clique fora e Alt+Tab também fecham.
 - **Bandeja**: Abrir painel, Ocultar/Mostrar cápsula, Sair.
 
 Argumentos úteis para diagnóstico:
 
-- `--simulate` — fonte de mídia simulada (nunca é o padrão; `TASKBARHOOK_SIMULATE=1` também ativa)
+- `--simulate` — fonte de mídia simulada, inclusive uma fila de demonstração (nunca é o padrão; `TASKBARHOOK_SIMULATE=1` também ativa)
 - `--probe` — lê sessões SMTC e encerra
 - `--inspect-taskbar` — lê geometria/ocupação da barra e encerra
 - `--seek-selftest` — seek SMTC de ida e volta sem abrir a UI
@@ -58,7 +61,7 @@ Logs: `%LOCALAPPDATA%\TaskBarHook\logs\app.log`
 
 ## Como funciona
 
-- **Mídia**: integração via SMTC (`SystemMediaTransportControls`) — sem API de player, OAuth ou arquivos internos.
+- **Mídia**: integração via SMTC (`SystemMediaTransportControls`) para faixa atual e comandos. A fila usa o endpoint oficial `GET /v1/me/player/queue` (PKCE, sem client secret), nunca playlist, histórico ou recomendações.
 - **Posicionamento**: a ocupação da barra é lida com `SHAppBarMessage`, filhos de `Shell_TrayWnd` e UI Automation só para geometria, fora da thread da interface. Leitura incompleta nunca vira vão livre.
 - **Seek**: prévia local, posição real e pedido pendente são estados separados, com reconciliação e cancelamento por troca de faixa/sessão.
 - **Aparência**: paleta semântica resolvida do tema do sistema em tempo real, sem recriar janelas.

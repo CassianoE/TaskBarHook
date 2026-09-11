@@ -199,6 +199,12 @@ public partial class PanelWindow : Window
                 return;
             }
 
+            if (ViewModel.Queue.CloseFromEscape())
+            {
+                e.Handled = true;
+                return;
+            }
+
             ViewModel.Collapse(restoreForeground: true);
             e.Handled = true;
             return;
@@ -248,6 +254,11 @@ public partial class PanelWindow : Window
 
     private void Panel_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (ViewModel.Queue.IsOpen && !IsWithinQueueTrigger(e.OriginalSource as DependencyObject))
+        {
+            ViewModel.Queue.NotifyPanelPointerDown();
+        }
+
         // Single owner during pointer gestures: us. Handling the event stops
         // the native Slider/Track/Thumb before it can jump, capture or drag,
         // so the pointer delta is applied exactly once, by our mapping below.
@@ -585,6 +596,27 @@ public partial class PanelWindow : Window
         {
             SeekSlider.ReleaseMouseCapture();
         }
+    }
+
+    internal void QueueTrigger_OnMouseEnter(object sender, MouseEventArgs e) =>
+        ViewModel.Queue.SetTriggerPointer(true);
+
+    internal void QueueTrigger_OnMouseLeave(object sender, MouseEventArgs e) =>
+        ViewModel.Queue.SetTriggerPointer(false);
+
+    internal static bool IsWithinQueueTrigger(DependencyObject? current)
+    {
+        while (current is not null)
+        {
+            if (current is Button button && button.Name == "QueueTrigger")
+            {
+                return true;
+            }
+
+            current = VisualTreeHelper.GetParent(current) ?? LogicalTreeHelper.GetParent(current);
+        }
+
+        return false;
     }
 
     private static bool IsWithinSeekSlider(DependencyObject current)
