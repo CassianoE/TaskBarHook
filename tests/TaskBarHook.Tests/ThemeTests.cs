@@ -83,10 +83,15 @@ public sealed class ThemeTests
             {
                 var palette = ThemeResolver.Resolve(new ThemeInputs(
                     light, light, accent, HighContrast: false));
-                var effective = ThemeResolver.BlendOver(palette.FocusRing, palette.Surface);
+                var backgrounds = ThemeResolver.FocusBackgrounds(
+                    palette.Surface,
+                    palette.HoverFill,
+                    palette.HoverOverlay,
+                    palette.PressedOverlay,
+                    palette.PressedFill);
                 Assert.True(
-                    ThemeResolver.ContrastRatio(effective, palette.Surface) >= 1.5,
-                    $"accent={accent} light={light}");
+                    ThemeResolver.MeetsFocusContrast(palette.FocusRing, backgrounds),
+                    $"accent={accent} light={light} ring={palette.FocusRing}");
             }
         }
     }
@@ -97,15 +102,48 @@ public sealed class ThemeTests
         var yellow = Color.FromRgb(0xFF, 0xFF, 0x00);
         var kept = ThemeResolver.Resolve(new ThemeInputs(
             SystemLight: false, AppsLight: false, Accent: yellow, HighContrast: false));
-        Assert.Equal(ThemeResolver.WithAlpha(yellow, 0x80), kept.FocusRing);
+        Assert.Equal(yellow.R, kept.FocusRing.R);
+        Assert.Equal(yellow.G, kept.FocusRing.G);
+        Assert.Equal(yellow.B, kept.FocusRing.B);
 
         var blackOnDark = ThemeResolver.Resolve(new ThemeInputs(
             SystemLight: false, AppsLight: false, Accent: Colors.Black, HighContrast: false));
-        Assert.Equal(ThemeResolver.WithAlpha(Color.FromRgb(0xF3, 0xF3, 0xF3), 0x80), blackOnDark.FocusRing);
+        Assert.True(ThemeResolver.ContrastRatio(
+            ThemeResolver.BlendOver(blackOnDark.FocusRing, blackOnDark.Surface),
+            blackOnDark.Surface) >= 3.0);
 
         var whiteOnLight = ThemeResolver.Resolve(new ThemeInputs(
             SystemLight: true, AppsLight: true, Accent: Colors.White, HighContrast: false));
-        Assert.Equal(ThemeResolver.WithAlpha(Color.FromRgb(0x1B, 0x1B, 0x1B), 0x80), whiteOnLight.FocusRing);
+        Assert.True(ThemeResolver.ContrastRatio(
+            ThemeResolver.BlendOver(whiteOnLight.FocusRing, whiteOnLight.Surface),
+            whiteOnLight.Surface) >= 3.0);
+    }
+
+    [Fact]
+    public void Default_blue_keeps_accent_hue_on_dark()
+    {
+        var palette = ThemeResolver.Resolve(new ThemeInputs(
+            SystemLight: false, AppsLight: false, Accent: BlueAccent, HighContrast: false));
+        ThemeResolver.RgbToHsl(BlueAccent, out var accentHue, out _, out _);
+        ThemeResolver.RgbToHsl(palette.FocusRing, out var ringHue, out _, out _);
+        var delta = Math.Abs(accentHue - ringHue);
+        if (delta > 0.5)
+        {
+            delta = 1 - delta;
+        }
+
+        Assert.True(delta < 0.05, $"hue drifted {delta} ring={palette.FocusRing}");
+        Assert.True(palette.FocusRing.A >= 0x80);
+    }
+
+    [Fact]
+    public void Yellow_on_light_is_darkened_instead_of_staying_illegible()
+    {
+        var yellow = Color.FromRgb(0xFF, 0xFF, 0x00);
+        var light = ThemeResolver.Resolve(new ThemeInputs(
+            SystemLight: true, AppsLight: true, Accent: yellow, HighContrast: false));
+        ThemeResolver.RgbToHsl(light.FocusRing, out _, out _, out var lightness);
+        Assert.True(lightness < 0.4, $"yellow ring stayed too light: {light.FocusRing}");
     }
 
     [Fact]

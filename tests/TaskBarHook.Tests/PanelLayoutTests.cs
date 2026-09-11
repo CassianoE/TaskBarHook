@@ -29,6 +29,10 @@ public sealed class PanelLayoutTests
             Assert.True(artistBox.Left >= 56, $"Artist starts at {artistBox.Left}.");
             Assert.True(artistBox.Top >= titleBox.Bottom - 1, "Artist is not below the title.");
             Assert.True(header.ActualHeight >= 56, $"Header is {header.ActualHeight} DIP.");
+            Assert.Equal("Próximas", window.QueueTrigger.Content);
+            var triggerBox = BoundsIn(window.QueueTrigger, header);
+            Assert.True(triggerBox.Left > titleBox.Right - 1, "Próximas should sit to the right of the title.");
+            Assert.True(triggerBox.Height <= 28, $"Trigger is {triggerBox.Height} DIP.");
             var gridBox = new Rect(0, 0, window.ContentGrid.ActualWidth, window.ContentGrid.ActualHeight);
             AssertInside(gridBox, BoundsIn(window.TitleText, window.ContentGrid));
             AssertInside(gridBox, BoundsIn(window.ArtistText, window.ContentGrid));

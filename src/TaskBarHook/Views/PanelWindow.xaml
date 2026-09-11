@@ -35,6 +35,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Border Width="56" Height="56" CornerRadius="8" Background="{DynamicResource TaskBarHook.SurfaceAlt}" ClipToBounds="True">
                         <Grid>
@@ -50,7 +51,7 @@
                                    Visibility="{Binding HasArtwork, Converter={StaticResource BoolToVis}}" />
                         </Grid>
                     </Border>
-                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" Margin="12,0,8,0" VerticalAlignment="Center">
                         <TextBlock x:Name="TitleText" Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                         <TextBlock x:Name="ArtistText"
                                    Text="{Binding Artist}"
@@ -61,6 +62,18 @@
                                    TextWrapping="NoWrap"
                                    Visibility="{Binding HasArtist, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
+                    <Button x:Name="QueueTrigger"
+                            Grid.Column="2"
+                            Style="{StaticResource QuietTextButtonStyle}"
+                            VerticalAlignment="Top"
+                            Margin="0,-2,0,0"
+                            TabIndex="4"
+                            Content="Próximas"
+                            Command="{Binding Queue.ToggleCommand}"
+                            MouseEnter="QueueTrigger_OnMouseEnter"
+                            MouseLeave="QueueTrigger_OnMouseLeave"
+                            AutomationProperties.Name="Próximas"
+                            ToolTip="Próximas faixas" />
                 </Grid>
                 <StackPanel x:Name="ControlsRow" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10,0,10">
                     <Button x:Name="PrevButton"

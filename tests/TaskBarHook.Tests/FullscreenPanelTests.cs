@@ -21,10 +21,13 @@ public sealed class FullscreenPanelTests
             "Spotify.exe"));
 
         viewModel.ToggleExpandedCommand.Execute(null);
+        viewModel.Queue.ToggleCommand.Execute(null);
         Assert.True(viewModel.IsExpanded);
+        Assert.True(viewModel.Queue.IsOpen);
 
         viewModel.SetFullscreen(true);
         Assert.False(viewModel.IsExpanded);
+        Assert.False(viewModel.Queue.IsOpen);
 
         viewModel.SetFullscreen(false);
         Assert.False(viewModel.IsExpanded);

@@ -1,9 +1,10 @@
 using TaskBarHook.Logging;
 using TaskBarHook.Models;
+using TaskBarHook.Queue;
 
 namespace TaskBarHook.Media;
 
-public sealed class SimulatedMediaSessionService : IMediaSessionService
+public sealed class SimulatedMediaSessionService : IMediaSessionService, IPlaybackQueueService
 {
     private static readonly byte[] SampleArtwork = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
@@ -48,7 +49,15 @@ public sealed class SimulatedMediaSessionService : IMediaSessionService
 
     public MediaSnapshot Current { get; private set; } = MediaSnapshot.Empty;
 
+    public PlaybackQueueSnapshot CurrentQueue { get; private set; } = PlaybackQueueSnapshot.Idle;
+
+    PlaybackQueueSnapshot IPlaybackQueueService.Current => CurrentQueue;
+
     public event EventHandler<MediaSnapshot>? SnapshotChanged;
+
+    public event EventHandler<PlaybackQueueSnapshot>? QueueChanged;
+
+    public bool CanAuthorize => false;
 
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
@@ -92,6 +101,7 @@ public sealed class SimulatedMediaSessionService : IMediaSessionService
             _position = TimeSpan.Zero;
             Current = MediaSnapshot.Empty;
             SnapshotChanged?.Invoke(this, Current);
+            PublishQueue();
             _logger.Info("Simulated session disappeared.");
             return true;
         }
@@ -174,6 +184,14 @@ public sealed class SimulatedMediaSessionService : IMediaSessionService
         }
     }
 
+    public Task AuthorizeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task RefreshAsync(MediaSnapshot session, CancellationToken cancellationToken = default)
+    {
+        PublishQueue();
+        return Task.CompletedTask;
+    }
+
     public ValueTask DisposeAsync()
     {
         _commandGate.Dispose();
@@ -215,6 +233,7 @@ public sealed class SimulatedMediaSessionService : IMediaSessionService
         {
             Current = MediaSnapshot.Empty;
             SnapshotChanged?.Invoke(this, Current);
+            PublishQueue();
             return;
         }
 
@@ -229,6 +248,29 @@ public sealed class SimulatedMediaSessionService : IMediaSessionService
             $"simulate:taskbarhook#{_sessionSerial}",
             _trackGeneration);
         SnapshotChanged?.Invoke(this, Current);
+        PublishQueue();
+    }
+
+    private void PublishQueue()
+    {
+        if (!_hasSession)
+        {
+            CurrentQueue = PlaybackQueueSnapshot.Empty(PlaybackQueueSource.Simulated);
+            QueueChanged?.Invoke(this, CurrentQueue);
+            return;
+        }
+
+        var items = new List<QueueTrack>();
+        for (var i = _index + 1; i < _tracks.Length; i++)
+        {
+            var track = _tracks[i];
+            items.Add(new QueueTrack($"{i}:{track.Title}", track.Title, null, track.Artwork));
+        }
+
+        CurrentQueue = items.Count == 0
+            ? PlaybackQueueSnapshot.Empty(PlaybackQueueSource.Simulated)
+            : PlaybackQueueSnapshot.Ready(items, PlaybackQueueSource.Simulated, true, CurrentTrack.Title);
+        QueueChanged?.Invoke(this, CurrentQueue);
     }
 
     private TimelineInfo BuildTimeline()

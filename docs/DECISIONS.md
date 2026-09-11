@@ -319,9 +319,30 @@ Política reescrita (4, inclui veto restaurado), debounce (6), VM sem-restore/se
 | Foco laranja, compacto HC | capturas ampliadas | Anel accent renderizado; compacto HC correto |
 | F11/Alt+Tab reais no navegador | — | Pendente no uso cotidiano (geometria idêntica à validada; forense armada no log) |
 
+## 0.6.0 — contraste do foco e fila flutuante
+
+### Foco ≥ 3:1
+
+O anel (1 px tracejado) aplicava o accent a 50% de opacidade com piso 1.5:1. No fundo realmente pintado — hover (~16% branco/preto) e pressionado (accent 10–22%) — o azul-padrão ficava abaixo de 3:1 mesmo opaco.
+
+- A paleta semântica não foi reestilizada; só `FocusRing` muda.
+- Primeiro sobe a opacidade do accent; se falhar, ajusta a luminância mantendo o matiz; só então mistura com a tinta do tema.
+- O piso 3:1 vale contra superfície, hover instantâneo, hover animado, pressionado e hover+pressionado.
+- Alto contraste continua em `SystemColors.Highlight`.
+- O azul-padrão no escuro fica um azul mais claro (~`#0A95FF`), ainda o mesmo accent.
+
+### Fila «Próximas»
+
+Controlo discreto no cabeçalho. Hover (280 ms de intenção) abre uma janela irmã ao lado (ou acima se não houver vão). O vão de 8 DIP não tem hit-test invisível: a tolerância de 160 ms cobre a travessia. Clique e teclado também abrem; hover não rouba o foco. Esc fecha a lista e mantém o painel. Fechar o painel ou entrar em fullscreen fecha lista e tooltips na hora. ~5 faixas visíveis (capa 32 + nome, elipse + tooltip), scroll só da fila. Consulta: sem reordenar, remover ou tocar para tocar.
+
+### Fonte da fila
+
+SMTC não expõe upcoming. A integração isolada chama só `GET https://api.spotify.com/v1/me/player/queue` (não playlist, histórico ou recomendações). PKCE público, variável `TASKBARHOOK_SPOTIFY_CLIENT_ID`, redirect `http://127.0.0.1:47823/callback`, escopos `user-read-currently-playing` e `user-read-playback-state`. Tokens com DPAPI. A fila da conta é confrontada com título/artista do SMTC antes de ser apresentada como continuação. `--simulate` é a única fila inventada, marcada como simulação.
+
 ## Limitações restantes
 
 - A taskbar do Windows 11 pode ficar acima de uma janela `TOPMOST`; recolocamos a nossa em eventos, sem loop.
 - Uma caminhada UIA “vazia” ainda é conservadora se Iniciar+Apps não puderem ser comprovados.
 - Timeout de 2 s não aborta a chamada ao Explorer; só deixa de esperar na UI.
 - Sem Top Mode, volume, playlists, login ou inicialização automática.
+- A fila autenticada exige `TASKBARHOOK_SPOTIFY_CLIENT_ID` e os escopos acima; sem isso a UI diz o que falta e não inventa faixas.
