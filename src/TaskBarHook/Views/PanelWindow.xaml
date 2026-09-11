@@ -1,0 +1,180 @@
+<Window x:Class="TaskBarHook.Views.PanelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TaskBarHook.Panel"
+        Width="320"
+        Height="192"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        Background="{DynamicResource TaskBarHook.Surface}"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Topmost="True"
+        ShowActivated="False"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        FontSize="13"
+        Foreground="{DynamicResource TaskBarHook.TextPrimary}"
+        Focusable="True">
+    <Border x:Name="RootBorder" Background="{DynamicResource TaskBarHook.Surface}" BorderBrush="{DynamicResource TaskBarHook.BorderSubtle}" BorderThickness="1">
+        <Border.RenderTransform>
+            <TranslateTransform x:Name="EnterTranslate" Y="0" />
+        </Border.RenderTransform>
+        <Grid Margin="16,12,16,12">
+            <Grid x:Name="ContentGrid" Visibility="{Binding HasPresentation, Converter={StaticResource BoolToVis}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid x:Name="HeaderGrid" Grid.Row="0">
+                    <Grid.RenderTransform>
+                        <TranslateTransform x:Name="HeaderTranslate" Y="0" />
+                    </Grid.RenderTransform>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="56" Height="56" CornerRadius="8" Background="{DynamicResource TaskBarHook.SurfaceAlt}" ClipToBounds="True">
+                        <Grid>
+                            <TextBlock Text="&#xE8D6;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="18"
+                                       Foreground="{DynamicResource TaskBarHook.PlaceholderIcon}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding HasArtwork, Converter={StaticResource InverseBoolToVis}}" />
+                            <Image Source="{Binding Artwork}"
+                                   Stretch="UniformToFill"
+                                   Visibility="{Binding HasArtwork, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="TitleText" Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                        <TextBlock x:Name="ArtistText"
+                                   Text="{Binding Artist}"
+                                   Margin="0,3,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TaskBarHook.TextSecondary}"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="NoWrap"
+                                   Visibility="{Binding HasArtist, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </Grid>
+                <StackPanel x:Name="ControlsRow" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10,0,10">
+                    <Button x:Name="PrevButton"
+                            Style="{StaticResource AnimatedIconButtonStyle}"
+                            Width="36"
+                            Height="36"
+                            Command="{Binding SkipPreviousCommand}"
+                            AutomationProperties.Name="Faixa anterior">
+                        <TextBlock Text="&#xE892;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" />
+                    </Button>
+                    <Button x:Name="PlayPauseButton"
+                            Style="{StaticResource AnimatedIconButtonStyle}"
+                            Width="40"
+                            Height="40"
+                            Margin="8,0"
+                            Command="{Binding PlayPauseCommand}"
+                            AutomationProperties.Name="{Binding PlayPauseLabel}">
+                        <TextBlock Text="{Binding PlayPauseGlyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" />
+                    </Button>
+                    <Button x:Name="NextButton"
+                            Style="{StaticResource AnimatedIconButtonStyle}"
+                            Width="36"
+                            Height="36"
+                            Command="{Binding SkipNextCommand}"
+                            AutomationProperties.Name="Faixa seguinte">
+                        <TextBlock Text="&#xE893;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" />
+                    </Button>
+                </StackPanel>
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="40" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding PositionText}" FontSize="11" Foreground="{DynamicResource TaskBarHook.TextSecondary}" VerticalAlignment="Center" />
+                        <ProgressBar Grid.Column="1"
+                                     Height="4"
+                                     Minimum="0"
+                                     Maximum="1"
+                                     Value="{Binding Progress}"
+                                     IsHitTestVisible="False"
+                                     Focusable="False"
+                                     Foreground="{DynamicResource TaskBarHook.ProgressFill}"
+                                     Background="{DynamicResource TaskBarHook.ProgressTrack}"
+                                     BorderThickness="0"
+                                     Visibility="{Binding CanSeek, Converter={StaticResource InverseBoolToVis}}" />
+                        <Slider x:Name="SeekSlider"
+                                Grid.Column="1"
+                                Style="{StaticResource SeekSliderStyle}"
+                                AutomationProperties.Name="Posição da faixa"
+                                Visibility="{Binding CanSeek, Converter={StaticResource BoolToVis}}"
+                                IsEnabled="{Binding CanSeek}"
+                                PreviewKeyDown="SeekSlider_OnPreviewKeyDown"
+                                PreviewKeyUp="SeekSlider_OnPreviewKeyUp"
+                                LostMouseCapture="SeekSlider_OnLostMouseCapture" />
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding DurationText}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TaskBarHook.TextSecondary}"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                    <TextBlock x:Name="SeekFailureText"
+                               Grid.Row="1"
+                               Margin="40,2,40,0"
+                               FontSize="10"
+                               Foreground="{DynamicResource TaskBarHook.ErrorText}"
+                               Text="{Binding SeekFailureText}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <Popup x:Name="SeekHintPopup"
+                           Grid.Row="0"
+                           Placement="Top"
+                           PlacementTarget="{Binding ElementName=SeekSlider}"
+                           AllowsTransparency="True"
+                           Focusable="False"
+                           IsHitTestVisible="False"
+                           StaysOpen="True"
+                           PopupAnimation="None">
+                        <Border Background="{DynamicResource TaskBarHook.HintSurface}"
+                                BorderBrush="{DynamicResource TaskBarHook.BorderSubtle}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="6,2">
+                            <TextBlock Text="{Binding SeekHintText}" FontSize="11" Foreground="{DynamicResource TaskBarHook.TextPrimary}" />
+                        </Border>
+                    </Popup>
+                </Grid>
+            </Grid>
+            <StackPanel VerticalAlignment="Center" Visibility="{Binding IsEmptyState, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Nenhuma mídia" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                <TextBlock Text="Abra o Spotify ou outro player compatível com o Windows."
+                           Margin="0,6,0,0"
+                           Foreground="{DynamicResource TaskBarHook.TextSecondary}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,81 @@
+<Window x:Class="TaskBarHook.Views.CompactWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TaskBarHook"
+        Width="200"
+        Height="32"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        Background="{DynamicResource TaskBarHook.Surface}"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Topmost="True"
+        ShowActivated="False"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        FontSize="12"
+        Foreground="{DynamicResource TaskBarHook.TextPrimary}"
+        Focusable="False">
+    <Border x:Name="Surface"
+            x:FieldModifier="public"
+            Background="{DynamicResource TaskBarHook.Surface}"
+            BorderBrush="{DynamicResource TaskBarHook.CompactBorder}"
+            BorderThickness="1"
+            MouseLeftButtonUp="Surface_OnMouseLeftButtonUp">
+        <Grid Margin="6,0,4,0">
+            <Grid x:Name="FullHost">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Width="22" Height="22" CornerRadius="4" Background="{DynamicResource TaskBarHook.SurfaceAlt}" ClipToBounds="True">
+                    <Grid>
+                        <TextBlock Text="&#xE8D6;"
+                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TaskBarHook.PlaceholderIcon}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding HasArtwork, Converter={StaticResource InverseBoolToVis}}" />
+                        <Image Source="{Binding Artwork}"
+                               Stretch="UniformToFill"
+                               Visibility="{Binding HasArtwork, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                </Border>
+                <TextBlock Grid.Column="1"
+                           Margin="8,0,6,0"
+                           Text="{Binding Title}"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"
+                           TextWrapping="NoWrap" />
+                <Button Grid.Column="2"
+                        Style="{StaticResource IconButtonStyle}"
+                        Command="{Binding PlayPauseCommand}"
+                        AutomationProperties.Name="{Binding PlayPauseLabel}"
+                        ToolTip="{Binding PlayPauseLabel}">
+                    <TextBlock Text="{Binding PlayPauseGlyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" />
+                </Button>
+            </Grid>
+            <Grid x:Name="MiniHost" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Width="22" Height="22" CornerRadius="4" Background="{DynamicResource TaskBarHook.SurfaceAlt}" ClipToBounds="True" HorizontalAlignment="Left">
+                    <Image Source="{Binding Artwork}"
+                           Stretch="UniformToFill"
+                           Visibility="{Binding HasArtwork, Converter={StaticResource BoolToVis}}" />
+                </Border>
+                <Button Grid.Column="1"
+                        Style="{StaticResource IconButtonStyle}"
+                        Command="{Binding PlayPauseCommand}"
+                        AutomationProperties.Name="{Binding PlayPauseLabel}">
+                    <TextBlock Text="{Binding PlayPauseGlyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" />
+                </Button>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

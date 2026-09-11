@@ -1,0 +1,32 @@
+﻿<Application x:Class="TaskBarHook.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/SharedResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Dark fallbacks: replaced by live ThemeManager brushes at startup. -->
+            <SolidColorBrush x:Key="TaskBarHook.Surface" Color="#1C1C1E" />
+            <SolidColorBrush x:Key="TaskBarHook.SurfaceAlt" Color="#2A2A2C" />
+            <SolidColorBrush x:Key="TaskBarHook.BorderSubtle" Color="#40FFFFFF" />
+            <SolidColorBrush x:Key="TaskBarHook.CompactBorder" Color="#33FFFFFF" />
+            <SolidColorBrush x:Key="TaskBarHook.TextPrimary" Color="#F3F3F3" />
+            <SolidColorBrush x:Key="TaskBarHook.TextSecondary" Color="#B3B3B3" />
+            <SolidColorBrush x:Key="TaskBarHook.PlaceholderIcon" Color="#66FFFFFF" />
+            <SolidColorBrush x:Key="TaskBarHook.HoverOverlay" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="TaskBarHook.PressedOverlay" Color="#0078D4" />
+            <SolidColorBrush x:Key="TaskBarHook.HoverFill" Color="#28FFFFFF" />
+            <SolidColorBrush x:Key="TaskBarHook.PressedFill" Color="#380078D4" />
+            <SolidColorBrush x:Key="TaskBarHook.HoverText" Color="#F3F3F3" />
+            <SolidColorBrush x:Key="TaskBarHook.FocusRing" Color="#800078D4" />
+            <SolidColorBrush x:Key="TaskBarHook.ProgressTrack" Color="#3A3A3C" />
+            <SolidColorBrush x:Key="TaskBarHook.ProgressFill" Color="#F3F3F3" />
+            <SolidColorBrush x:Key="TaskBarHook.ProgressRemainder" Color="#33FFFFFF" />
+            <SolidColorBrush x:Key="TaskBarHook.ProgressThumb" Color="#F3F3F3" />
+            <SolidColorBrush x:Key="TaskBarHook.ErrorText" Color="#B3B3B3" />
+            <SolidColorBrush x:Key="TaskBarHook.HintSurface" Color="#2A2A2C" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

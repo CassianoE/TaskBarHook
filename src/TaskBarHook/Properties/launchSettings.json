@@ -1,0 +1,19 @@
+{
+  "profiles": {
+    "TaskBarHook": {
+      "commandName": "Project"
+    },
+    "Simulate": {
+      "commandName": "Project",
+      "commandLineArgs": "--simulate"
+    },
+    "Probe": {
+      "commandName": "Project",
+      "commandLineArgs": "--probe"
+    },
+    "InspectTaskbar": {
+      "commandName": "Project",
+      "commandLineArgs": "--inspect-taskbar"
+    }
+  }
+}
